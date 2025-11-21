@@ -57,12 +57,13 @@ for index, row in factordata.iterrows() :
     else:
         collab2_num = float(collab2_val)
 
+    # Ensure conversion to float before addition
     Collaboration_Average = (collab1_num + collab2_num)/2
     Enjoyment_Average = (float(row['Enjoyment1']) + float(row['Enjoyment2']))/2
-    Exploration_Average = (float(row['Exploration1'] + row['Exploration2']))/2
-    Expressiveness_Average = (float(row['Expressiveness1'] + row['Expressiveness2']))/2
-    Immersion_Average = (float(row['Immersion1'] + row['Immersion2']))/2
-    ResultsWorthEffort_Average = (float(row['ResultsWorthEffort1'] + row['ResultsWorthEffort2']))/2
+    Exploration_Average = (float(row['Exploration1']) + float(row['Exploration2']))/2
+    Expressiveness_Average = (float(row['Expressiveness1']) + float(row['Expressiveness2']))/2
+    Immersion_Average = (float(row['Immersion1']) + float(row['Immersion2']))/2
+    ResultsWorthEffort_Average = (float(row['ResultsWorthEffort1']) + float(row['ResultsWorthEffort2']))/2
 
     # Store each average set of values per participant in a list
     csi_collab_average.append(Collaboration_Average)
