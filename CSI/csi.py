@@ -16,11 +16,6 @@ def WriteDictToCSV(csv_file,csv_columns,dict_data):
     return
 
 # Load data from csv file
-#factordata = sys.argv[1]
-#pairwisedata = sys.argv[2]
-#outputdata = sys.argv[3]
-#outputfactordata = sys.argv[4]
-#outputfactordata_sorted = sys.argv[5]
 factordata = pd.DataFrame.from_csv('csi-input-factor-data.csv')
 pairwisedata = pd.DataFrame.from_csv('csi-input-pairwise-data.csv')
 outputdata = 'csi-results.csv'
@@ -29,9 +24,6 @@ outputfactordata_sorted = 'csi-factors-results-sorted.csv'
 
 CSIScore = []
 CSIScoreByFactors = []
-
-# Test the loaded data in Python
-factordata
 
 # PART1
 
@@ -43,14 +35,35 @@ csi_expr_average = []
 csi_immer_average = []
 csi_effor_average = []
 
+# Initialize N/A flag columns
+factordata['Collaboration1_is_na'] = False
+factordata['Collaboration2_is_na'] = False
+
 # For each row in the column,
 for index, row in factordata.iterrows() :
-    Collaboration_Average = (float(row['Collaboration1']) + float(row['Collaboration2']))/2
+    # Handle N/A for Collaboration items
+    collab1_val = row['Collaboration1']
+    collab2_val = row['Collaboration2']
+
+    if str(collab1_val).strip().upper() == 'N/A':
+        collab1_num = 0
+        factordata.at[index, 'Collaboration1_is_na'] = True
+    else:
+        collab1_num = float(collab1_val)
+
+    if str(collab2_val).strip().upper() == 'N/A':
+        collab2_num = 0
+        factordata.at[index, 'Collaboration2_is_na'] = True
+    else:
+        collab2_num = float(collab2_val)
+
+    Collaboration_Average = (collab1_num + collab2_num)/2
     Enjoyment_Average = (float(row['Enjoyment1']) + float(row['Enjoyment2']))/2
     Exploration_Average = (float(row['Exploration1'] + row['Exploration2']))/2
     Expressiveness_Average = (float(row['Expressiveness1'] + row['Expressiveness2']))/2
     Immersion_Average = (float(row['Immersion1'] + row['Immersion2']))/2
     ResultsWorthEffort_Average = (float(row['ResultsWorthEffort1'] + row['ResultsWorthEffort2']))/2
+
     # Store each average set of values per participant in a list
     csi_collab_average.append(Collaboration_Average)
     csi_enjoy_average.append(Enjoyment_Average)
@@ -58,8 +71,6 @@ for index, row in factordata.iterrows() :
     csi_expr_average.append(Expressiveness_Average)
     csi_immer_average.append(Immersion_Average)
     csi_effor_average.append(ResultsWorthEffort_Average)
-    #print csi_collab_average
-    #print csi_enjoy_average
 
 # Create a column from the list
 factordata['Collaboration_Average'] = csi_collab_average
@@ -70,9 +81,6 @@ factordata['Immersion_Average'] = csi_immer_average
 factordata['ResultsWorthEffort_Average'] = csi_effor_average
 
 # PART2
-
-# Test the loaded data in Python
-pairwisedata
 
 # Create a list to store the data
 csi_collab_count = 0
@@ -109,9 +117,6 @@ for index, row in pairwisedata.iterrows() :
         elif eval == 'Produce results that are worth the effort I put in':
             csi_effor_count = csi_effor_count + 1
 
-    # Print one of the vectors to check
-    # print(csi_effor_count)
-
     # Store each average set of values per participant in a list
     csi_collab_count_total.append(csi_collab_count)
     csi_enjoy_count_total.append(csi_enjoy_count)
@@ -128,8 +133,6 @@ for index, row in pairwisedata.iterrows() :
     csi_immer_count = 0
     csi_effor_count = 0
 
-# print(csi_effor_count_total)
-
 factordata['Collaboration_Count'] = csi_collab_count_total
 factordata['Enjoyment_Count'] = csi_enjoy_count_total
 factordata['Exploration_Count'] = csi_expl_count_total
@@ -144,10 +147,8 @@ ExpressivenessSub = factordata['Expressiveness_Average'] * factordata['Expressiv
 ImmersionSub = factordata['Immersion_Average'] * factordata['Immersion_Count']
 ResultsWorthEffortSub = factordata['ResultsWorthEffort_Average'] * factordata['ResultsWorthEffort_Count']
 
-CSIScore = sum([CollaborationSub, EnjoymentSub, ExplorationSub, ExpressivenessSub, ImmersionSub, ResultsWorthEffortSub])/1.5
-
-# print(CSIScore)
-
+# Update divisor to 3.0 for canonical CSI
+CSIScore = sum([CollaborationSub, EnjoymentSub, ExplorationSub, ExpressivenessSub, ImmersionSub, ResultsWorthEffortSub])/3.0
 
 collabmean = CollaborationSub.mean()
 collabstd = CollaborationSub.std()
@@ -162,14 +163,23 @@ immersstd = ImmersionSub.std()
 effortmean = ResultsWorthEffortSub.mean()
 effortstd = ResultsWorthEffortSub.std()
 
-csv_columns = ['Term','Mean','SD']
+csv_columns = ['Term','Mean','SD','Collaboration1_is_na','Collaboration2_is_na']
+
+# Add N/A flags to dict_data for CSV export
 dict_data = [
-    {'Term': "Collaboration", 'Mean': collabmean, 'SD': collabstd},
-    {'Term': "Enjoyment", 'Mean': enjoymean, 'SD': enjoystd},
-    {'Term': "Exploration", 'Mean': explormean, 'SD': explorstd},
-    {'Term': "Expressiveness", 'Mean': expressmean, 'SD': expressstd},
-    {'Term': "Immersion", 'Mean': immersmean, 'SD': immersstd},
-    {'Term': "ResultsWorthEffort", 'Mean': effortmean, 'SD': effortstd},
+    {'Term': "Collaboration", 'Mean': collabmean, 'SD': collabstd,
+     'Collaboration1_is_na': factordata['Collaboration1_is_na'].sum(),
+     'Collaboration2_is_na': factordata['Collaboration2_is_na'].sum()},
+    {'Term': "Enjoyment", 'Mean': enjoymean, 'SD': enjoystd,
+     'Collaboration1_is_na': '', 'Collaboration2_is_na': ''},
+    {'Term': "Exploration", 'Mean': explormean, 'SD': explorstd,
+     'Collaboration1_is_na': '', 'Collaboration2_is_na': ''},
+    {'Term': "Expressiveness", 'Mean': expressmean, 'SD': expressstd,
+     'Collaboration1_is_na': '', 'Collaboration2_is_na': ''},
+    {'Term': "Immersion", 'Mean': immersmean, 'SD': immersstd,
+     'Collaboration1_is_na': '', 'Collaboration2_is_na': ''},
+    {'Term': "ResultsWorthEffort", 'Mean': effortmean, 'SD': effortstd,
+     'Collaboration1_is_na': '', 'Collaboration2_is_na': ''},
     ]
 
 # Write results to a csv file
